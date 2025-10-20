@@ -4,6 +4,7 @@
   "version": "0.1",
   "description": "Validates Kubernetes YAML files in GitHub/GitLab against compliance guardrails.",
   "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": ["https://github.com/*", "https://gitlab.com/*"],
   "background": {
     "service_worker": "src/background.js"
   },
