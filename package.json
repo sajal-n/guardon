@@ -1,0 +1,14 @@
+{
+  "name": "k8s-guardrails-extension",
+  "version": "0.1.0",
+  "description": "Kubernetes YAML Guardrails Browser Extension",
+  "main": "background.js",
+  "scripts": {
+    "lint": "echo 'Add linting later'"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  }
+}
