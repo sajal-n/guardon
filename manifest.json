@@ -14,5 +14,8 @@
       "48": "assets/icon48.png",
       "128": "assets/icon128.png"
     }
-  }
+  },"content_scripts" : [{
+    "matches": ["https://github.com/*", "https://gitlab.com/*"],
+    "js": ["src/content.js"]
+  }]
 }

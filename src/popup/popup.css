@@ -1,1 +1,23 @@
-body { font-family: Arial, sans-serif; padding: 10px; }
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 600px;   /* adjust to taste (max ~800) */
+  height: 500px;  /* max ~600px */
+  overflow-y: auto;
+  font-family: "Segoe UI", Roboto, sans-serif;
+  background-color: #f9fafb;
+}
+
+#container {
+  padding: 16px;
+}
+
+#results {
+  margin-top: 12px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 12px;
+  white-space: pre-wrap;
+  font-size: 13px;
+}
