@@ -1,12 +1,27 @@
 {
   "manifest_version": 3,
   "name": "Kubernetes Guardrail Extension",
-  "version": "0.1",
+  "version": "0.3",
   "description": "Validates Kubernetes YAML files in GitHub/GitLab against compliance guardrails.",
-  "permissions": [],
-  "background": {
-    "service_worker": "src/background.js"
-  },
+  "permissions": ["storage", "activeTab", "scripting"],
+  "background": { "service_worker": "src/background.js" },
+  "content_scripts": [
+    {
+      "matches": ["https://github.com/*", "https://gitlab.com/*"],
+      "js": ["src/lib/js-yaml.min.js", "src/content.js"],
+      "type": "module"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "src/utils/*.js",
+        "src/lib/*.js",
+        "src/popup/*.js"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ],
   "action": {
     "default_popup": "src/popup/popup.html",
     "default_icon": {
@@ -14,8 +29,6 @@
       "48": "assets/icon48.png",
       "128": "assets/icon128.png"
     }
-  },"content_scripts" : [{
-    "matches": ["https://github.com/*", "https://gitlab.com/*"],
-    "js": ["src/content.js"]
-  }]
+  },
+  "options_page": "src/options/options.html"
 }

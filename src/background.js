@@ -1,2 +1,3 @@
-// Background script placeholder
-console.log('Kubernetes Guardrail Extension running...');
+chrome.runtime.onInstalled.addListener(() => {
+  console.log("Kubernetes Guardrail Extension installed.");
+});

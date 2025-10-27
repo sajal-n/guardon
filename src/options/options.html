@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Kubernetes Guardrail – Rule Manager</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #fafafa; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { padding: 8px; border: 1px solid #ddd; }
+    th { background-color: #eee; text-align: left; }
+    button { margin-right: 5px; padding: 5px 10px; }
+    #form { margin-top: 20px; background: #fff; padding: 15px; border-radius: 6px; border: 1px solid #ddd; }
+    input, select { margin-bottom: 8px; width: 100%; padding: 6px; }
+  </style>
+</head>
+<body>
+  <h2>🧩 Kubernetes Guardrail Rules</h2>
+  <div>
+    <button id="addRule">➕ Add Rule</button>
+    <button id="importRules">📥 Import</button>
+    <button id="exportRules">📤 Export</button>
+  </div>
+  
+  <table id="rulesTable">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Description</th>
+        <th>Severity</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="rulesBody"></tbody>
+  </table>
+
+  <div id="form" style="display:none;">
+    <h3 id="formTitle">Add Rule</h3>
+    <label>ID:</label><input id="ruleId">
+    <label>Description:</label><input id="ruleDesc">
+    <label>YAML Path (match):</label><input id="ruleMatch">
+    <label>Pattern (RegEx):</label><input id="rulePattern">
+    <label>Required:</label>
+    <select id="ruleRequired">
+      <option value="false">false</option>
+      <option value="true">true</option>
+    </select>
+    <label>Severity:</label>
+    <select id="ruleSeverity">
+      <option value="info">info</option>
+      <option value="warning">warning</option>
+      <option value="error">error</option>
+    </select>
+    <label>Message:</label><input id="ruleMessage">
+    <br>
+    <button id="saveRule">💾 Save</button>
+    <button id="cancelRule">✖ Cancel</button>
+  </div>
+
+  <script src="options.js"></script>
+  <!-- Toast notification -->
+  <div id="toast" style="position:fixed;right:20px;bottom:20px;z-index:9999;display:none;padding:10px 14px;border-radius:8px;background:#111;color:#fff;box-shadow:0 6px 18px rgba(2,6,23,0.2);font-size:13px;"></div>
+</body>
+</html>
