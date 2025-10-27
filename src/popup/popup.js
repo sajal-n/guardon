@@ -50,6 +50,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Try to get YAML text/selection by messaging the content script first (safer, doesn't require scripting permission)
   let yamlText = null;
+  let fetchedFromGithub = false;
+  let fetchedUrl = null;
   try {
     yamlText = await new Promise((resolve) => {
       chrome.tabs.sendMessage(tab.id, { type: "GET_YAML" }, (resp) => {
@@ -86,6 +88,8 @@ document.addEventListener("DOMContentLoaded", async () => {
               const text = await resp.text();
               if (/apiVersion:|kind:|metadata:/i.test(text)) {
                 yamlText = text;
+                fetchedFromGithub = true;
+                fetchedUrl = rawUrl;
               }
             }
           } catch (e) {
@@ -137,6 +141,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Show manual textarea so user can paste YAML
     const manualArea = document.getElementById('manualYaml');
     manualArea.style.display = 'block';
+  // Ensure fetched notice hidden when manual paste is shown
+  const fetchedNotice = document.getElementById('fetchedNotice');
+  if (fetchedNotice) fetchedNotice.style.display = 'none';
     // wire manual buttons below
     document.getElementById('useSelection').onclick = async () => {
       // Try messaging the content script first
@@ -177,6 +184,22 @@ document.addEventListener("DOMContentLoaded", async () => {
       renderResults(results);
     };
     return;
+  }
+
+  // If we fetched the YAML from GitHub, show a notice and hide manual controls
+  if (fetchedFromGithub) {
+    const fetchedNotice = document.getElementById('fetchedNotice');
+    if (fetchedNotice) {
+      fetchedNotice.textContent = `Validated file fetched from GitHub: ${fetchedUrl}`;
+      fetchedNotice.style.display = 'block';
+    }
+    // hide manual controls if present
+    const manualArea = document.getElementById('manualYaml');
+    const useSelectionBtn = document.getElementById('useSelection');
+    const validateManualBtn = document.getElementById('validateManual');
+    if (manualArea) manualArea.style.display = 'none';
+    if (useSelectionBtn) useSelectionBtn.style.display = 'none';
+    if (validateManualBtn) validateManualBtn.style.display = 'none';
   }
 
   const { customRules } = await chrome.storage.local.get("customRules");
