@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="560" viewBox="0 0 1000 560">
+  <style>
+    .box { fill: #f8fafc; stroke: #0f172a; stroke-width:1.5; rx:8 }
+    .title { font: 14px 'Segoe UI', Roboto, Arial; fill:#041425; font-weight:700 }
+    .label { font: 12px 'Segoe UI', Roboto, Arial; fill:#0b2540 }
+    .arrow { stroke:#0f172a; stroke-width:1.5; fill:none; marker-end:url(#arrowhead) }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#0f172a" />
+    </marker>
+  </defs>
+
+  <!-- Popup -->
+  <g transform="translate(60,40)">
+    <rect class="box" x="0" y="0" width="220" height="120"/>
+    <text class="title" x="16" y="28">Popup UI</text>
+    <text class="label" x="16" y="52">- User input / Paste YAML</text>
+    <text class="label" x="16" y="72">- Request page YAML (message)</text>
+    <text class="label" x="16" y="92">- Show results & suggestions</text>
+  </g>
+
+  <!-- Content Script -->
+  <g transform="translate(360,40)">
+    <rect class="box" x="0" y="0" width="220" height="90"/>
+    <text class="title" x="16" y="28">Content Script</text>
+    <text class="label" x="16" y="52">- Respond to popup messages</text>
+    <text class="label" x="16" y="72">- Return raw YAML from page</text>
+  </g>
+
+  <!-- Background service worker -->
+  <g transform="translate(660,40)">
+    <rect class="box" x="0" y="0" width="240" height="120"/>
+    <text class="title" x="16" y="28">Background (service worker)</text>
+    <text class="label" x="16" y="52">- Fetch raw content (fallback)</text>
+    <text class="label" x="16" y="72">- Provide host-fallback for import-from-URL</text>
+    <text class="label" x="16" y="92">- Storage access</text>
+  </g>
+
+  <!-- Rules Engine + Utils -->
+  <g transform="translate(200,220)">
+    <rect class="box" x="0" y="0" width="600" height="200"/>
+    <text class="title" x="16" y="28">Rules Engine & Utilities</text>
+    <text class="label" x="16" y="52">- parse multi-doc YAML</text>
+    <text class="label" x="16" y="72">- validate rules (kind filter, wildcard paths)</text>
+    <text class="label" x="16" y="92">- build suggestions & preview patched YAML</text>
+    <text class="label" x="16" y="112">- Kyverno importer (prototype)</text>
+    <text class="label" x="16" y="132">- Storage read/write (rules)</text>
+  </g>
+
+  <!-- arrows -->
+  <path class="arrow" d="M280 100 L360 100" />
+  <text class="label" x="300" y="88">request YAML</text>
+
+  <path class="arrow" d="M580 100 L660 100" />
+  <text class="label" x="600" y="88">fallback fetch</text>
+
+  <path class="arrow" d="M180 160 L180 220" />
+  <path class="arrow" d="M460 130 L460 220" />
+  <text class="label" x="410" y="168">submit YAML to</text>
+  <text class="label" x="412" y="186">rules engine</text>
+
+  <path class="arrow" d="M560 320 L740 320" />
+  <text class="label" x="640" y="308">storage / rules</text>
+
+  <!-- Suggestion output -->
+  <g transform="translate(780,260)">
+    <rect class="box" x="0" y="0" width="160" height="120"/>
+    <text class="title" x="12" y="28">Suggestions</text>
+    <text class="label" x="12" y="52">- Preview patched YAML</text>
+    <text class="label" x="12" y="72">- Copy / Download</text>
+    <text class="label" x="12" y="92">- Explain (rationale + refs)</text>
+  </g>
+
+  <path class="arrow" d="M700 300 L780 300" />
+
+  <!-- footer note -->
+  <text class="label" x="60" y="520">Diagram: high-level data flow between popup, content script, background and rules engine. For details see `src/`.</text>
+</svg>
