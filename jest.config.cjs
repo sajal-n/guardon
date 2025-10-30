@@ -10,4 +10,7 @@ module.exports = {
     'src/utils/**/*.js'
   ],
   coverageDirectory: 'coverage',
+  // Tests moved from `__tests__` to `tests/` to avoid packaging issues (extensions may reject folders
+  // starting with an underscore). Jest should search the `tests` folder as the root for test files.
+  roots: ['<rootDir>/tests'],
 };
