@@ -1,5 +1,5 @@
 <!-- GitHub Copilot instructions for contributors and AI agents -->
-# Kubernetes Guardrail Extension — Copilot instructions
+# Guardon — Copilot instructions
 
 This file gives targeted, actionable guidance to AI coding assistants working on this repository.
 
@@ -10,7 +10,7 @@ Keep the guidance short and specific: reference the main components, where rules
   - `src/background.js` — service worker (background logic placeholder).
   - `src/content.js` — page-injected content script placeholder.
   - `src/popup/*` — popup UI (HTML/CSS/JS).
-  - `src/lint/rules.js` — guardrail rules (each rule has id, description, validate function).
+  - `src/lint/rules.js` — Guardon rules (each rule has id, description, validate function).
   - `src/lint/validator.js` — YAML parsing + rule evaluation using `js-yaml`.
 
 - Big picture: the extension injects `content.js` into pages and exposes a popup UI. The core feature is validating Kubernetes YAML documents using rule functions defined in `src/lint/rules.js`. Validation is performed by parsing YAML with `js-yaml` (dependency in `package.json`) and running each rule's `validate` function against the parsed object.
@@ -33,7 +33,7 @@ Keep the guidance short and specific: reference the main components, where rules
   - `js-yaml` is the only runtime dependency. Parsing is done with `yaml.load`.
   - The extension runs in-browser; there are no network calls in the current codebase.
 
-- Files that commonly need edits for new guardrails:
+- Files that commonly need edits for new Guardon checks:
   - `src/lint/rules.js` — add new rule objects. Follow existing rule shape and return boolean `true` when the rule is violated (current code treats truthy as violation).
   - `src/lint/validator.js` — update result shape if you change how rules signal violations. The validator currently maps rules to { rule: description, violated } and returns only violated ones.
   - `src/popup/popup.js` — currently duplicates validator logic; prefer importing from `src/lint/validator.js` and reusing shared functions where possible.
@@ -45,7 +45,7 @@ Keep the guidance short and specific: reference the main components, where rules
   - Rule `validate` functions return a truthy value for violations; validator filters for `violated`. Keep this direction when adding rules.
 
 - Example tasks for AI agents (explicit, small deliverables):
-  - Add a new guardrail: "Require resource requests/limits" — edit `src/lint/rules.js` adding a rule that checks container resources.
+  - Add a new Guardon check: "Require resource requests/limits" — edit `src/lint/rules.js` adding a rule that checks container resources.
   - Consolidate validator: refactor `src/popup/popup.js` to import and call `validateYaml` from `src/lint/validator.js`.
   - Add basic unit tests (e.g., using Jest) for `validateYaml`.
 

@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="280" viewBox="0 0 1200 280">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1">
+      <stop offset="0" stop-color="#0f172a" />
+      <stop offset="1" stop-color="#0f4c81" />
+    </linearGradient>
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="6" stdDeviation="12" flood-color="#000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="280" rx="12" fill="url(#g)" />
+
+  <!-- Shield icon -->
+  <g transform="translate(80,40)" filter="url(#shadow)">
+    <rect x="0" y="0" width="200" height="200" rx="28" fill="#0ea5e9" opacity="0.08" />
+    <path d="M100 12 L140 40 L140 95 C140 150 100 178 100 178 C100 178 60 150 60 95 L60 40 Z" fill="#06b6d4" stroke="#083344" stroke-width="2" />
+    <circle cx="100" cy="88" r="18" fill="#fff" opacity="0.18" />
+  </g>
+
+  <!-- Title -->
+  <g transform="translate(320,60)">
+    <text x="0" y="0" font-family="Segoe UI, Roboto, Arial" font-size="44" font-weight="700" fill="#fff">Guardon</text>
+    <text x="0" y="52" font-family="Segoe UI, Roboto, Arial" font-size="20" fill="#e6f7ff">Kubernetes Guardon checks — lint, explain, and suggest fixes for YAML</text>
+
+    <!-- badges -->
+    <g transform="translate(0,92)">
+      <rect x="0" y="0" width="160" height="34" rx="6" fill="#0ea5e9" />
+      <text x="14" y="22" font-family="Segoe UI, Roboto" font-size="14" fill="#04263a">Browser Extension</text>
+      <rect x="180" y="0" width="220" height="34" rx="6" fill="#164e63" opacity="0.95" />
+      <text x="194" y="22" font-family="Segoe UI, Roboto" font-size="14" fill="#dff6ff">Multi-doc YAML • Kyverno importer</text>
+    </g>
+  </g>
+
+  <!-- Decorative cluster of squares representing YAML/docs -->
+  <g transform="translate(920,40)">
+    <rect x="0" y="0" width="40" height="52" rx="6" fill="#fff" opacity="0.06" />
+    <rect x="54" y="0" width="80" height="52" rx="6" fill="#fff" opacity="0.06" />
+    <rect x="0" y="62" width="134" height="52" rx="6" fill="#fff" opacity="0.04" />
+    <rect x="0" y="124" width="90" height="32" rx="6" fill="#fff" opacity="0.03" />
+  </g>
+
+  <text x="88" y="240" font-family="Segoe UI, Roboto, Arial" font-size="12" fill="#bfe7ff">Open-source • Privacy-first • No telemetry</text>
+</svg>

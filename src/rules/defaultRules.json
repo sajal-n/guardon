@@ -1,0 +1,18 @@
+[
+  {
+    "id": "no-latest-tag",
+    "description": "Avoid using 'latest' image tag.",
+    "match": "spec.template.spec.containers[*].image",
+    "pattern": ":latest$",
+    "severity": "error",
+    "message": "Image uses the 'latest' tag. Use versioned tags instead."
+  },
+  {
+    "id": "require-limits",
+    "description": "Every container must define resource limits.",
+    "match": "spec.template.spec.containers[*].resources.limits",
+    "required": true,
+    "severity": "warning",
+    "message": "Container missing resource limits."
+  }
+]

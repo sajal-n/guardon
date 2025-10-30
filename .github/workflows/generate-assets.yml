@@ -1,0 +1,35 @@
+name: Generate assets (SVG -> PNG)
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches:
+      - feature/enhancement
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install puppeteer
+        run: |
+          npm ci || true
+          npm install puppeteer --no-audit --no-fund --no-save
+
+      - name: Run conversion
+        run: node scripts/convert-svg-to-png.js
+
+      - name: Commit generated PNG
+        uses: EndBug/add-and-commit@v9
+        with:
+          author_name: github-actions
+          author_email: actions@github.com
+          message: 'chore: generate architecture-diagram.png from SVG'
+          add: 'assets/architecture-diagram.png'

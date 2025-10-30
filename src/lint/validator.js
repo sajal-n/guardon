@@ -1,4 +1,4 @@
-import { guardrailRules } from './rules.js';
+import { guardonRules } from './rules.js';
 
 // Use the bundled UMD `jsyaml` when running in the browser (popup loads
 // `src/lib/js-yaml.min.js` which exposes `globalThis.jsyaml`). If not
@@ -16,7 +16,7 @@ export function validateYaml(content) {
 
   try {
     const doc = jsyaml.load(content);
-    const results = guardrailRules.map(rule => ({
+  const results = guardonRules.map(rule => ({
       rule: rule.description,
       violated: rule.validate(doc)
     }));

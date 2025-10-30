@@ -1,4 +1,4 @@
-export const guardrailRules = [
+export const guardonRules = [
   {
     id: "no-privileged",
     description: "Containers must not run as privileged",
