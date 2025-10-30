@@ -3,8 +3,10 @@ import * as fs from 'fs';
 import path from 'path';
 
 const modPath = '../src/utils/rulesEngine.js';
-const { default: _ } = await import('url');
-const engine = await import(modPath);
+let engine;
+beforeAll(async () => {
+  engine = await import(modPath);
+});
 
 describe('rulesEngine utilities', () => {
   test('_get and _has basic behavior', () => {

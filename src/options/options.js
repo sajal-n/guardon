@@ -1,3 +1,5 @@
+import { showKyvernoPreview as kpShow, hideKyvernoPreview as kpHide, escapeHtml as kpEscapeHtml } from './kyvernoPreview.js';
+
 let rules = [];
 let editingIndex = null;
 
@@ -24,13 +26,20 @@ const inputs = {
 const importUrlInput = document.getElementById('importUrl');
 const fetchUrlBtn = document.getElementById('fetchUrl');
 
-// Load rules
-chrome.storage.local.get("customRules", (data) => {
-  rules = data.customRules || [];
-  renderTable();
-});
+// Kyverno preview modal helpers moved to `kyvernoPreview.js`; expose small wrappers
+const kyvernoModal = document.getElementById('kyvernoModal');
+const kyvernoPreviewBody = document.getElementById('kyvernoPreviewBody');
+const kyvernoMeta = document.getElementById('kyvernoMeta');
+const kyvernoImportConvertedBtn = document.getElementById('kyvernoImportConverted');
+const kyvernoImportRawBtn = document.getElementById('kyvernoImportRaw');
+const kyvernoCancelBtn = document.getElementById('kyvernoCancel');
 
-// Toast helper
+let _kyvernoPreviewState = null; // { converted:[], rawText, meta }
+
+function showKyvernoPreview(converted, rawText, meta = {}) {
+  _kyvernoPreviewState = { converted, rawText, meta };
+  try { kpShow(converted, rawText, meta); } catch (e) { /* defensive */ }
+}
 function showToast(msg, opts = {}) {
   const toast = document.getElementById('toast');
   if (!toast) return;
@@ -47,9 +56,10 @@ function showToast(msg, opts = {}) {
 }
 
 function renderTable() {
-  tableBody.innerHTML = "";
+  if (!tableBody) return;
+  tableBody.innerHTML = '';
   rules.forEach((r, idx) => {
-    const tr = document.createElement("tr");
+    const tr = document.createElement('tr');
     const tdId = document.createElement('td'); tdId.textContent = r.id || '';
     const tdEnabled = document.createElement('td');
     const enChk = document.createElement('input');
@@ -58,14 +68,13 @@ function renderTable() {
     enChk.addEventListener('change', () => {
       rules[idx].enabled = !!enChk.checked;
       saveRules();
-      // mild visual feedback
       tr.style.opacity = enChk.checked ? '1' : '0.5';
     });
     tdEnabled.appendChild(enChk);
     tdEnabled.style.textAlign = 'center';
-  const tdDesc = document.createElement('td'); tdDesc.textContent = r.description || '';
-  const tdKind = document.createElement('td'); tdKind.textContent = r.kind || '';
-  const tdSeverity = document.createElement('td'); tdSeverity.textContent = r.severity || '';
+    const tdDesc = document.createElement('td'); tdDesc.textContent = r.description || '';
+    const tdKind = document.createElement('td'); tdKind.textContent = r.kind || '';
+    const tdSeverity = document.createElement('td'); tdSeverity.textContent = r.severity || '';
     const tdActions = document.createElement('td');
 
     const editBtn = document.createElement('button');
@@ -83,7 +92,6 @@ function renderTable() {
 
     tr.appendChild(tdId);
     tr.appendChild(tdEnabled);
-    // Visual hint for disabled rules
     tr.style.opacity = (r.enabled === undefined || r.enabled) ? '1' : '0.5';
     tr.appendChild(tdDesc);
     tr.appendChild(tdKind);
@@ -92,6 +100,13 @@ function renderTable() {
     tableBody.appendChild(tr);
   });
 }
+
+function hideKyvernoPreview() {
+  _kyvernoPreviewState = null;
+  try { kpHide(); } catch (e) { /* defensive */ }
+}
+
+function escapeHtml(s) { return kpEscapeHtml(s); }
 
 window.editRule = function (idx) {
   editingIndex = idx;
@@ -126,30 +141,34 @@ window.deleteRule = function (idx) {
   }
 };
 
-document.getElementById("addRule").onclick = () => {
+const addRuleBtn = document.getElementById("addRule");
+if (addRuleBtn) addRuleBtn.onclick = () => {
   editingIndex = null;
   formTitle.textContent = "Add Rule";
   Object.values(inputs).forEach(i => i.value = "");
-  inputs.required.value = "false";
-  inputs.severity.value = "warning";
-  form.style.display = "block";
+  if (inputs.required) inputs.required.value = "false";
+  if (inputs.severity) inputs.severity.value = "warning";
+  if (form) form.style.display = "block";
 };
 
-document.getElementById("cancelRule").onclick = () => {
-  form.style.display = "none";
+const cancelRuleBtn = document.getElementById("cancelRule");
+if (cancelRuleBtn) cancelRuleBtn.onclick = () => {
+  if (form) form.style.display = "none";
 };
 
-document.getElementById("saveRule").onclick = () => {
+const saveRuleBtn = document.getElementById("saveRule");
+if (saveRuleBtn) saveRuleBtn.onclick = () => {
+  console.debug('[options] saveRule clicked');
   const newRule = {
-    id: inputs.id.value.trim(),
-    description: inputs.desc.value.trim(),
-    kind: inputs.kind.value.trim(),
-    match: inputs.match.value.trim(),
-    pattern: inputs.pattern.value.trim(),
-    required: inputs.required.value === "true",
+    id: (inputs.id && inputs.id.value ? inputs.id.value.trim() : ''),
+    description: (inputs.desc && inputs.desc.value ? inputs.desc.value.trim() : ''),
+    kind: (inputs.kind && inputs.kind.value ? inputs.kind.value.trim() : ''),
+    match: (inputs.match && inputs.match.value ? inputs.match.value.trim() : ''),
+    pattern: (inputs.pattern && inputs.pattern.value ? inputs.pattern.value.trim() : ''),
+    required: (inputs.required && inputs.required.value) ? inputs.required.value === "true" : false,
     enabled: inputs.enabled ? !!inputs.enabled.checked : true,
-    severity: inputs.severity.value,
-    message: inputs.message.value.trim(),
+    severity: (inputs.severity && inputs.severity.value) ? inputs.severity.value : 'warning',
+    message: (inputs.message && inputs.message.value ? inputs.message.value.trim() : ''),
     // parse fix JSON if provided; keep as object
     fix: (function(){
       if (!inputs.fix) return undefined;
@@ -168,8 +187,46 @@ document.getElementById("saveRule").onclick = () => {
     })(),
   };
 
-  // All fields are mandatory
-  const missingFields = [];
+  // Basic validation
+  const missing = [];
+  if (!newRule.id) missing.push('id');
+  if (!newRule.description) missing.push('description');
+  if (!newRule.match) missing.push('match');
+  if (!newRule.pattern) missing.push('pattern');
+  if (typeof newRule.required !== 'boolean') missing.push('required');
+  if (!newRule.severity) missing.push('severity');
+  if (!newRule.message) missing.push('message');
+
+  if (missing.length) {
+    showToast('Missing required fields: ' + missing.join(', '), { background: '#b91c1c' });
+    return;
+  }
+
+  // Validate severity
+  const allowedSeverities = ['info', 'warning', 'error'];
+  if (!allowedSeverities.includes(newRule.severity)) {
+    showToast('Severity must be one of: info, warning, error', { background: '#b91c1c' });
+    return;
+  }
+
+  // Prevent duplicate IDs (unless editing the same index)
+  const duplicateIdx = rules.findIndex((r, i) => r.id === newRule.id && i !== editingIndex);
+  if (duplicateIdx !== -1) {
+    showToast(`Rule ID "${newRule.id}" already exists. Choose a unique ID.`, { background: '#b91c1c' });
+    return;
+  }
+
+  if (editingIndex !== null) rules[editingIndex] = newRule;
+  else rules.push(newRule);
+
+  saveRules();
+  if (form) form.style.display = 'none';
+  renderTable();
+  showToast(editingIndex !== null ? 'Rule updated' : 'Rule added', { background: '#059669' });
+};
+
+const importRulesBtn = document.getElementById("importRules");
+if (importRulesBtn) importRulesBtn.onclick = async () => {
   if (!newRule.id) missingFields.push('id');
   if (!newRule.description) missingFields.push('description');
   if (!newRule.kind) missingFields.push('kind');
@@ -211,76 +268,6 @@ function saveRules() {
   chrome.storage.local.set({ customRules: rules });
 }
 
-document.getElementById("importRules").onclick = async () => {
-  // Show the import panel where users can upload a JSON file or paste JSON
-  const panel = document.getElementById('importPanel');
-  if (panel) panel.style.display = 'block';
-};
-
-// Cancel import
-document.getElementById('cancelImport').onclick = () => {
-  const panel = document.getElementById('importPanel');
-  if (panel) panel.style.display = 'none';
-  const ta = document.getElementById('importTextarea'); if (ta) ta.value = '';
-  const file = document.getElementById('importFile'); if (file) file.value = null;
-};
-
-// Paste from clipboard into the textarea
-document.getElementById('pasteClipboard').onclick = async () => {
-  try {
-    const text = await navigator.clipboard.readText();
-    const ta = document.getElementById('importTextarea');
-    if (ta) ta.value = text || '';
-    showToast('Pasted clipboard into import area', { background: '#0ea5e9' });
-  } catch (e) {
-    showToast('Failed to read clipboard', { background: '#b91c1c' });
-  }
-};
-
-// Helper: apply an array of normalized rules (id/description/kind/match/required/...) into storage
-function applyNormalizedRules(normalized) {
-  if (!Array.isArray(normalized) || normalized.length === 0) {
-    showToast('No convertible rules found.', { background: '#b91c1c' });
-    return;
-  }
-
-  // Basic validation and normalization (ensure id exists)
-  const norm = normalized.map(r => ({
-    id: String(r.id || '').trim(),
-    description: r.description || r.desc || '',
-    kind: r.kind || '',
-    match: r.match || '',
-    pattern: r.pattern || '',
-    required: r.required === true || r.required === 'true',
-    enabled: (r.enabled === undefined) ? true : (r.enabled === true || r.enabled === 'true'),
-    fix: r.fix !== undefined ? r.fix : undefined,
-    explain: r.explain !== undefined ? r.explain : (r.rationale || r.references ? { rationale: r.rationale || '', refs: Array.isArray(r.references) ? r.references : (typeof r.references === 'string' ? r.references.split(',').map(s=>s.trim()).filter(Boolean) : []) } : undefined),
-    severity: r.severity || 'warning',
-    message: r.message || '',
-  }));
-
-  let added = 0, replaced = 0;
-  for (const nr of norm) {
-    if (!nr.id) continue;
-    const idx = rules.findIndex(r => r.id === nr.id);
-    if (idx !== -1) {
-      rules[idx] = nr;
-      replaced++;
-    } else {
-      rules.push(nr);
-      added++;
-    }
-  }
-
-  if (added === 0 && replaced === 0) {
-    showToast('No rules imported.', { background: '#b91c1c' });
-  } else {
-    saveRules();
-    renderTable();
-    showToast(`Imported ${added} new, replaced ${replaced} existing rule(s)`, { background: '#059669' });
-  }
-}
-
 // Save original Kyverno policy text into storage for auditability.
 function saveRawKyverno(rawText, meta = {}) {
   try {
@@ -302,77 +289,7 @@ function saveRawKyverno(rawText, meta = {}) {
   }
 }
 
-// Kyverno preview modal helpers
-const kyvernoModal = document.getElementById('kyvernoModal');
-const kyvernoPreviewBody = document.getElementById('kyvernoPreviewBody');
-const kyvernoMeta = document.getElementById('kyvernoMeta');
-const kyvernoImportConvertedBtn = document.getElementById('kyvernoImportConverted');
-const kyvernoImportRawBtn = document.getElementById('kyvernoImportRaw');
-const kyvernoCancelBtn = document.getElementById('kyvernoCancel');
-
-let _kyvernoPreviewState = null; // { converted:[], rawText, meta }
-
-function showKyvernoPreview(converted, rawText, meta = {}) {
-  _kyvernoPreviewState = { converted, rawText, meta };
-  if (!kyvernoModal) return;
-  kyvernoPreviewBody.innerHTML = '';
-  kyvernoMeta.textContent = `Policy source: ${meta.url || 'fetched content'} — converted ${converted.length} rule(s)`;
-  // Render rows with a checkbox per converted rule so users may choose which
-  // converted rules to import. Each checkbox value is the index in the
-  // converted array.
-  converted.forEach((r, idx) => {
-    const tr = document.createElement('tr');
-    const chkTd = document.createElement('td');
-    chkTd.style.padding = '6px';
-    chkTd.style.borderBottom = '1px solid #eee';
-    const chk = document.createElement('input');
-    chk.type = 'checkbox';
-    chk.className = 'kyvernoRowCheckbox';
-    chk.value = String(idx);
-    // default to checked so users get all rules unless they uncheck
-    chk.checked = true;
-    chkTd.appendChild(chk);
-
-    const idTd = document.createElement('td'); idTd.style.padding = '6px'; idTd.style.borderBottom = '1px solid #eee'; idTd.textContent = escapeHtml(r.id);
-    const descTd = document.createElement('td'); descTd.style.padding = '6px'; descTd.style.borderBottom = '1px solid #eee'; descTd.textContent = escapeHtml(r.description);
-    const kindTd = document.createElement('td'); kindTd.style.padding = '6px'; kindTd.style.borderBottom = '1px solid #eee'; kindTd.textContent = escapeHtml(r.kind);
-    const matchTd = document.createElement('td'); matchTd.style.padding = '6px'; matchTd.style.borderBottom = '1px solid #eee'; matchTd.textContent = escapeHtml(r.match);
-    const msgTd = document.createElement('td'); msgTd.style.padding = '6px'; msgTd.style.borderBottom = '1px solid #eee'; msgTd.textContent = escapeHtml(r.message);
-
-    tr.appendChild(chkTd);
-    tr.appendChild(idTd);
-    tr.appendChild(descTd);
-    tr.appendChild(kindTd);
-    tr.appendChild(matchTd);
-    tr.appendChild(msgTd);
-    kyvernoPreviewBody.appendChild(tr);
-  });
-
-  // Wire the select-all checkbox (if present) to toggle all row checkboxes.
-  const selectAll = document.getElementById('kyvernoSelectAll');
-  if (selectAll) {
-    // default: selectAll checked when we opened the preview
-    selectAll.checked = true;
-    selectAll.onclick = () => {
-      const checked = !!selectAll.checked;
-      const boxes = kyvernoPreviewBody.querySelectorAll('input.kyvernoRowCheckbox');
-      boxes.forEach(b => b.checked = checked);
-    };
-  }
-  kyvernoModal.style.display = 'flex';
-}
-
-function hideKyvernoPreview() {
-  _kyvernoPreviewState = null;
-  if (!kyvernoModal) return;
-  kyvernoModal.style.display = 'none';
-}
-
-function escapeHtml(s) {
-  if (s == null) return '';
-  return String(s).replace(/[&<>"'`]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;","`":"&#96;"}[c]));
-}
-
+// Wire Kyverno preview action buttons (wrappers are implemented in kyvernoPreview.js)
 if (kyvernoCancelBtn) kyvernoCancelBtn.addEventListener('click', hideKyvernoPreview);
 if (kyvernoImportRawBtn) kyvernoImportRawBtn.addEventListener('click', () => {
   if (!_kyvernoPreviewState) return;
@@ -500,7 +417,8 @@ if (fetchUrlBtn) {
 }
 
 // Handle file selection: read file into textarea for preview/import
-document.getElementById('importFile').addEventListener('change', (ev) => {
+const importFileEl = document.getElementById('importFile');
+if (importFileEl) importFileEl.addEventListener('change', (ev) => {
   const f = ev.target.files && ev.target.files[0];
   if (!f) return;
   const reader = new FileReader();
@@ -513,7 +431,8 @@ document.getElementById('importFile').addEventListener('change', (ev) => {
 });
 
 // Parse and import the JSON from textarea (or file-loaded content)
-document.getElementById('doImport').onclick = () => {
+const doImportBtn = document.getElementById('doImport');
+if (doImportBtn) doImportBtn.onclick = () => {
   const ta = document.getElementById('importTextarea');
   const text = ta ? ta.value.trim() : '';
   if (!text) {
@@ -603,7 +522,8 @@ document.getElementById('doImport').onclick = () => {
   const file = document.getElementById('importFile'); if (file) file.value = null;
 };
 
-document.getElementById("exportRules").onclick = async () => {
+const exportRulesBtn = document.getElementById("exportRules");
+if (exportRulesBtn) exportRulesBtn.onclick = async () => {
   const payload = JSON.stringify({ customRules: rules }, null, 2);
 
   // 1) Trigger download
