@@ -1,9 +1,14 @@
 {
   "manifest_version": 3,
-  "name": "Kubernetes Guardrail Extension",
+  "name": "Guardon — Kubernetes Guardon checks",
   "version": "0.3",
-  "description": "Validates Kubernetes YAML files in GitHub/GitLab against compliance guardrails.",
+  "description": "Guardon validates Kubernetes YAML files in GitHub/GitLab against configurable Guardon checks.",
   "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": [
+    "https://raw.githubusercontent.com/*",
+    "https://github.com/*",
+    "https://api.github.com/*"
+  ],
   "background": { "service_worker": "src/background.js" },
   "content_scripts": [
     {

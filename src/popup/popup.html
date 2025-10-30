@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Kubernetes Guardrail</title>
+  <title>Guardon</title>
   <link rel="stylesheet" href="popup.css">
   <!-- Load UMD js-yaml so popup module can access globalThis.jsyaml -->
   <script src="../lib/js-yaml.min.js"></script>
 </head>
 <body>
   <h2>
-    🛡️ Guardrail Summary
+  🛡️ Guardon Summary
     <span id="statusBadge" class="status clean" style="display:none;">STATUS</span>
   </h2>
   <div id="bootStatus" style="font-size:12px;color:#666;margin-top:6px;">Initializing…</div>
@@ -20,18 +20,20 @@
   <div id="fetchedNotice" style="margin-top:8px;font-size:13px;color:#064e3b;display:none;"></div>
   <div id="summary"></div>
 
-  <div id="manual" style="margin:8px 0;">
-    <label for="manualYaml" style="font-size:13px;display:block;margin-bottom:4px;">Paste YAML or use page selection:</label>
-    <textarea id="manualYaml" rows="6" style="width:100%;font-family:monospace;display:none;" placeholder="Paste Kubernetes YAML here..."></textarea>
+  <!-- Manual paste/selection area is hidden by default and only shown when no YAML
+       was detected at popup open. The popup script will reveal this block when
+       appropriate. -->
+  <div id="manual" style="margin:8px 0;display:none;">
+    <label id="manualLabel" for="manualYaml" style="font-size:13px;display:block;margin-bottom:4px;">Paste YAML:</label>
+    <textarea id="manualYaml" rows="6" style="width:100%;font-family:monospace;display:block;" placeholder="Paste Kubernetes YAML here..."></textarea>
     <div style="margin-top:6px;">
-      <button id="useSelection" class="copy" style="margin-right:6px;">Use Selection</button>
       <button id="validateManual" class="copy">Validate</button>
     </div>
   </div>
 
   <table id="resultsTable" style="display:none;">
     <thead>
-      <tr><th>Severity</th><th>Rule</th><th>Message</th></tr>
+      <tr><th>Severity</th><th>Rule</th><th>Message</th><th>Actions</th></tr>
     </thead>
     <tbody id="resultsBody"></tbody>
   </table>
@@ -39,6 +41,32 @@
   <div id="noYaml" style="display:none;">No Kubernetes YAML detected on this page.</div>
 
   <button id="copyReport" class="copy" style="display:none;">📋 Copy Report</button>
+
+  <!-- Suggestion preview modal -->
+  <div id="suggestionModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;align-items:center;justify-content:center;">
+    <div style="background:#fff;max-width:900px;width:90%;max-height:80%;overflow:auto;padding:16px;border-radius:8px;">
+      <h3 id="suggestionTitle">Suggested Fix Preview</h3>
+      <div id="suggestionHint" style="font-size:13px;color:#444;margin-bottom:8px;"></div>
+      <pre id="suggestionPre" style="background:#f7f7f7;padding:12px;border-radius:6px;overflow:auto;white-space:pre-wrap;word-break:break-word;max-height:400px;"></pre>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+        <button id="copyPatchBtn">Copy Patched YAML</button>
+        <button id="downloadPatchBtn">Download Patched YAML</button>
+        <button id="closeSuggestionBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Explain modal: shows rationale and references for a rule -->
+  <div id="explainModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10010;align-items:center;justify-content:center;">
+    <div style="background:#fff;max-width:700px;width:90%;max-height:80%;overflow:auto;padding:16px;border-radius:8px;">
+      <h3 id="explainTitle">Policy explanation</h3>
+      <div id="explainRationale" style="font-size:13px;color:#111;margin-bottom:12px;white-space:pre-wrap;"></div>
+      <div id="explainRefs" style="font-size:13px;color:#0b5394;margin-bottom:12px;"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+        <button id="closeExplainBtn">Close</button>
+      </div>
+    </div>
+  </div>
 
   <script src="popup.js" type="module"></script>
 </body>

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Kubernetes Guardrail – Rule Manager</title>
+  <title>Guardon – Rule Manager</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; background: #fafafa; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
@@ -14,18 +14,42 @@
   </style>
 </head>
 <body>
-  <h2>🧩 Kubernetes Guardrail Rules</h2>
+  <h2>🧩 Guardon Rules</h2>
   <div>
     <button id="addRule">➕ Add Rule</button>
     <button id="importRules">📥 Import</button>
     <button id="exportRules">📤 Export</button>
+  </div>
+
+  <!-- Import panel: allows file upload or paste JSON text -->
+  <div id="importPanel" style="display:none;margin-top:12px;background:#fff;padding:12px;border:1px solid #e6e6e6;border-radius:6px;">
+    <h3 style="margin-top:0">Import Rules</h3>
+    <div style="margin-bottom:8px;">
+      <input id="importFile" type="file" accept="application/json,.json">
+    </div>
+    <div style="margin-bottom:8px;">
+      <label for="importUrl" style="display:block;margin-bottom:4px;font-size:13px;color:#333;">Or fetch JSON from a URL (e.g. raw.githubusercontent.com):</label>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input id="importUrl" type="url" placeholder="https://raw.githubusercontent.com/owner/repo/branch/path/to/file.json" style="flex:1;padding:6px;" />
+        <button id="fetchUrl" type="button">Fetch</button>
+      </div>
+    </div>
+    <div style="margin-bottom:8px;">or paste JSON below:</div>
+    <textarea id="importTextarea" rows="8" style="width:100%;font-family:monospace;margin-bottom:8px;" placeholder='Paste JSON here (array of rules or { "customRules": [...] })'></textarea>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button id="doImport">Import</button>
+      <button id="pasteClipboard">Paste from clipboard</button>
+      <button id="cancelImport">Cancel</button>
+    </div>
   </div>
   
   <table id="rulesTable">
     <thead>
       <tr>
         <th>ID</th>
+        <th>Enabled</th>
         <th>Description</th>
+        <th>Kind</th>
         <th>Severity</th>
         <th>Actions</th>
       </tr>
@@ -39,6 +63,8 @@
     <label>Description:</label><input id="ruleDesc">
     <label>YAML Path (match):</label><input id="ruleMatch">
     <label>Pattern (RegEx):</label><input id="rulePattern">
+    <label>Kind (comma-separated):</label><input id="ruleKind" placeholder="e.g. Deployment,StatefulSet">
+  <small id="ruleKindHelp" style="color:#666;display:block;margin-bottom:8px;font-size:12px;">Comma-separated (e.g. Deployment, StatefulSet) — case-insensitive.</small>
     <label>Required:</label>
     <select id="ruleRequired">
       <option value="false">false</option>
@@ -51,11 +77,49 @@
       <option value="error">error</option>
     </select>
     <label>Message:</label><input id="ruleMessage">
+  <label style="display:block;margin-top:8px">Enabled:</label>
+  <input id="ruleEnabled" type="checkbox" checked style="transform:scale(1.1);margin-bottom:8px;" />
+  <label style="display:block;margin-top:8px">Fix (optional JSON):</label>
+  <textarea id="ruleFix" rows="4" style="width:100%;font-family:monospace;margin-bottom:8px;" placeholder='Optional JSON describing the fix, e.g. {"action":"insert","value":{...},"hint":"..."}'></textarea>
     <br>
+    <label style="display:block;margin-top:8px">Rationale (optional):</label>
+    <textarea id="ruleRationale" rows="3" style="width:100%;font-family:monospace;margin-bottom:8px;" placeholder="Explain why this rule exists, cite CIS/NIST/Kyverno or internal docs"></textarea>
+    <label style="display:block;margin-top:8px">References (optional):</label>
+    <input id="ruleReferences" type="text" style="width:100%;margin-bottom:8px;padding:6px;" placeholder="Comma-separated URLs, e.g. https://kyverno.io,https://www.cisecurity.org" />
     <button id="saveRule">💾 Save</button>
     <button id="cancelRule">✖ Cancel</button>
   </div>
 
+  <!-- Kyverno import helper and YAML parser (load before options.js) -->
+  <script src="../lib/js-yaml.min.js"></script>
+  <script src="../utils/kyvernoImporter.js"></script>
+  <!-- Kyverno preview modal (placed before options.js so script can wire elements) -->
+  <div id="kyvernoModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:10000;align-items:center;justify-content:center;">
+    <div style="background:#fff;max-width:900px;width:90%;max-height:80%;overflow:auto;padding:16px;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+      <h3 style="margin-top:0">Kyverno policy detected — preview converted rules</h3>
+      <div id="kyvernoMeta" style="font-size:13px;color:#444;margin-bottom:8px;"></div>
+      <div style="max-height:320px;overflow:auto;border:1px solid #eee;padding:8px;margin-bottom:8px;background:#fbfbfb;">
+        <table id="kyvernoPreviewTable" style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr>
+              <th style="text-align:left;border-bottom:1px solid #ddd;padding:6px;width:36px"><input type="checkbox" id="kyvernoSelectAll" title="Select all" /></th>
+              <th style="text-align:left;border-bottom:1px solid #ddd;padding:6px">ID</th>
+              <th style="text-align:left;border-bottom:1px solid #ddd;padding:6px">Description</th>
+              <th style="text-align:left;border-bottom:1px solid #ddd;padding:6px">Kind</th>
+              <th style="text-align:left;border-bottom:1px solid #ddd;padding:6px">Match</th>
+              <th style="text-align:left;border-bottom:1px solid #ddd;padding:6px">Message</th>
+            </tr>
+          </thead>
+          <tbody id="kyvernoPreviewBody"></tbody>
+        </table>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button id="kyvernoImportConverted">Import Converted Rules</button>
+        <button id="kyvernoImportRaw">Store Raw Policy</button>
+        <button id="kyvernoCancel">Cancel</button>
+      </div>
+    </div>
+  </div>
   <script src="options.js"></script>
   <!-- Toast notification -->
   <div id="toast" style="position:fixed;right:20px;bottom:20px;z-index:9999;display:none;padding:10px 14px;border-radius:8px;background:#111;color:#fff;box-shadow:0 6px 18px rgba(2,6,23,0.2);font-size:13px;"></div>

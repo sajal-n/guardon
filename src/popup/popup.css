@@ -1,12 +1,14 @@
 html, body {
   margin: 0;
   padding: 0;
-  width: 600px;   /* adjust to taste (max ~800) */
-  height: 520px;  /* max ~600px */
+  /* Fixed popup size with internal scrolling when content overflows. */
+  width: 600px;   /* fixed width */
+  height: 520px;  /* fixed height */
   overflow-y: auto;
   font-family: "Segoe UI", Roboto, sans-serif;
   background: linear-gradient(180deg, #f7fbff 0%, #f0f6ff 100%);
   color: #0f1724;
+  box-sizing: border-box;
 }
 
 #container {
@@ -71,13 +73,30 @@ html.dark, body.dark {
   color: #e6eef8;
 }
 html.dark #container { color: #e6eef8; }
-html.dark #manualYaml { background:#0b1220; border-color:#1f2937; color:#e6eef8; }
-html.dark #resultsTable { background:#071124; box-shadow: 0 6px 18px rgba(2,6,23,0.5); }
-html.dark #resultsTable thead th { background:#071828; color:#cbd5e1; }
-html.dark th, html.dark td { border-bottom:1px solid rgba(255,255,255,0.03); }
+html.dark #manualYaml, body.dark #manualYaml { background:#0b1220; border-color:#1f2937; color:#e6eef8; }
+html.dark #resultsTable, body.dark #resultsTable { background:#071124; box-shadow: 0 6px 18px rgba(2,6,23,0.5); }
+html.dark #resultsTable thead th, body.dark #resultsTable thead th { background:#071828; color:#cbd5e1; }
+html.dark th, html.dark td, body.dark th, body.dark td { border-bottom:1px solid rgba(255,255,255,0.03); }
+
+/* Smooth color transitions when toggling theme */
+html, body, #summary, #manualYaml, #resultsTable, h2, #bootStatus {
+  transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease;
+}
 
 /* Icons in table */
 .severity-icon { margin-right:6px; }
+
+/* Action buttons (small icon-only buttons placed inline) */
+.actions-cell { white-space: nowrap; }
+.action-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: none; cursor: pointer; padding: 6px 8px; border-radius: 6px; font-weight:600; }
+.icon-btn { width: 34px; height: 34px; padding: 0; font-size: 16px; }
+.action-btn:hover { filter: brightness(0.98); transform: translateY(-1px); }
+.action-btn:active { transform: translateY(0); }
+.action-btn.preview { background: linear-gradient(90deg,#06b6d4,#0891b2); color: #fff; }
+.action-btn.copy { background: linear-gradient(90deg,#34d399,#059669); color: #fff; }
+.action-btn.explain { background: linear-gradient(90deg,#f3f4f6,#e6eef8); color: #0b5394; box-shadow: none; border: 1px solid rgba(11,83,148,0.08); }
+
+#resultsTable td .action-btn { margin-right: 6px; }
 
 .controls { margin-top: 8px; display:flex; gap:8px; }
 

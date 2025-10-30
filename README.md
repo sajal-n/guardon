@@ -1,35 +1,133 @@
-# 🛡️ Kubernetes Guardrail Browser Extension
+# 🛡️ Guardon — Kubernetes Guardon checks Browser Extension
 
-A lightweight browser extension that validates Kubernetes YAML files in real time against common security and compliance guardrails.
+Guardon is a lightweight browser extension that helps developers and reviewers detect common Kubernetes misconfigurations and security issues directly on code hosting sites (GitHub, GitLab, Bitbucket) or from pasted YAML. It parses multi-document YAML, applies configurable rules, and can suggest safe fixes.
 
-## Features
-- Inline linting for Kubernetes YAML files (GitHub, GitLab, Bitbucket).
-- Built-in guardrails:
-  - No privileged containers
-  - Resource requests/limits required
-  - No hostPath mounts
-  - Image tag must not be 'latest'
+This README documents installation, development, configuration, and how to contribute to the project.
 
-## Installation
-1. Clone this repo.
-2. Go to `chrome://extensions` → Enable **Developer mode**.
-3. Click **Load unpacked** → select this folder.
+## Key features
 
-## Example
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: insecure-pod
-spec:
-  containers:
-    - name: bad
-      image: nginx:latest
-      securityContext:
-        privileged: true
-```
+- Validate Kubernetes YAML (multi-document) in the browser popup.
+- Rule engine with:
+  - Pattern checks (regex) and per-element wildcard support (containers[*].image)
+  - Required-field checks with per-element reporting
+  - Kind-based filtering (comma-separated, case-insensitive)
+  - Optional fix suggestion metadata (preview & copy patched YAML)
+- Kyverno policy importer (prototype) — converts simple Kyverno validate patterns into internal rules and preserves raw policies for audit.
+- Explain button: attach rationale and external references (CIS, NIST, Kyverno) to rules and surface them in the popup.
+- Safe content-script behavior: non-invasive (no auto-injection); validation happens on explicit action (popup) or manual paste.
+- Background fetch helper for importing remote rule files or raw YAML from hosts like raw.githubusercontent.com.
 
-➡️ Flags issues like privileged containers or `latest` tag.
+## Quick install (developer / local)
+
+1. Clone the repository:
+
+  git clone https://github.com/<owner>/guardon.git
+  cd guardon
+
+2. Developer prerequisites
+
+   - Node.js >= 16 (for running tests)
+   - npm (bundled with Node)
+
+3. Install dependencies (for tests & local tooling):
+
+   ```powershell
+   npm install
+   ```
+
+4. Load extension into Chrome (unpacked):
+
+   - Open `chrome://extensions`
+   - Enable **Developer mode**
+   - Click **Load unpacked** and select this repository folder
+
+Note: The extension uses a UMD `js-yaml` bundle for content scripts and popup, which is provided in `src/lib/js-yaml.min.js`. Node tests import the npm `js-yaml` package.
+
+## Usage
+
+- Open the popup on a page containing Kubernetes YAML (e.g., a GitHub blob). The popup tries messaging the content script, then falls back to fetching raw content (GitHub raw), and finally executeScript extraction.
+- If YAML is found, the extension validates it and shows violations grouped by severity. Click items for suggested actions.
+- If no YAML is detected, paste YAML manually in the popup and click Validate.
+
+Popup actions per violation:
+
+- Preview patch (🔧): Generate a patched YAML preview for the suggested fix.
+- Copy snippet (📋): Copy only the snippet/value recommended by the fix.
+- Explain (ℹ️): Show the rule rationale and reference links (CIS/NIST/Kyverno docs or internal links).
+
+## Rules & Options
+
+- Rules are stored in extension storage and editable via the Options page (`src/options/options.html`).
+- Rule schema (important fields):
+
+  - id: unique rule identifier
+  - description: human description
+  - kind: optional comma-separated kinds to scope the rule
+  - match: dot/array path to inspect (supports `[*]` for arrays)
+  - pattern: a JavaScript RegExp string to evaluate against the target value
+  - required: boolean — mark field as required
+  - severity: `info` | `warning` | `error`
+  - fix: optional JSON describing a suggested fix (action/value/hint)
+  - explain: optional object { rationale: string, refs: string[] }
+
+- Options page features:
+  - Add/Edit/Delete rules
+  - Import from file or URL (background fetch fallback)
+  - Kyverno policy detection + preview of converted rules
+
+## Kyverno importer (prototype)
+
+- Located at `src/utils/kyvernoImporter.js`.
+- Detects Kyverno Policy manifests (apiVersion contains `kyverno.io` and kind Policy/ClusterPolicy).
+- Converts simple `validate.pattern` leaves into required checks and pattern-based rules. Also detects common env `name`/`value` entries and converts negative checks (`!value`) into pattern rules with sibling conditions.
+- Converted rules are previewed in the Options page; you can import converted rules or store raw Kyverno policies for audit.
+
+Limitations: the importer is heuristic and intentionally conservative — complex policies are not fully converted and are left for manual review.
+
+## Development & tests
+
+- Run unit tests and collect coverage (requires dependencies installed):
+
+  ```powershell
+  npm install
+  npm test
+  ```
+
+- Tests use Jest and target utility modules under `src/utils`. Coverage reports are stored in `coverage/`.
+
+If `npm install` fails, please check your Node/npm versions and network connectivity. Share the npm error output if you need help troubleshooting.
+
+## Architecture notes
+
+- rulesEngine: `src/utils/rulesEngine.js` — core validation engine. Exports `validateYaml`, `previewPatchedYaml` and helpers. Designed to run in both browser (with UMD js-yaml) and Node (npm js-yaml).
+- kyvernoImporter: `src/utils/kyvernoImporter.js` — converts Kyverno patterns to internal rules.
+- content scripts: minimal and message-driven — they avoid DOM mutations on load.
+- background service worker: provides a `FETCH_RAW` helper for CORS/raw fetching.
+
+## Contributing
+
+- Bug reports and pull requests are welcome. Please follow these guidelines:
+  1. Open an issue describing the bug or feature.
+  2. Create a branch: `git checkout -b feature/your-feature`.
+  3. Add tests for new behavior where applicable.
+  4. Keep changes focused and unit-tested.
+
+- Coding style: follow existing project patterns (plain JS, minimal dependencies). Aim for readable, defensive code in utility modules.
+
+## Security / Responsible disclosure
+
+- Do not include secrets in rules or in commits. If you discover a security issue, open a private issue or contact the maintainers so we can address it promptly.
+
+## Troubleshooting
+
+- Popup shows "Validation engine not available": open DevTools for the popup and check console for module import or js-yaml errors.
+- Suggestions not appearing: ensure rules saved in Options include `fix` and `explain` metadata; open DevTools and inspect `chrome.storage.local.get('customRules', ...)` to verify.
+- `npm install` fails: check Node version (`node -v`) and npm error logs (share them for help).
 
 ## License
-Apache 2.0
+
+Apache-2.0 — see the LICENSE file.
+
+## Contact
+
+If you'd like help adapting this extension to your org's policies or adding automatic PR patching, open an issue or create a discussion thread in the repository.

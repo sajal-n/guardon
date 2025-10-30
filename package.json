@@ -1,14 +1,19 @@
 {
-  "name": "k8s-guardrails-extension",
+  "name": "guardon",
   "version": "0.1.0",
-  "description": "Kubernetes YAML Guardrails Browser Extension",
+  "description": "Guardon — Kubernetes YAML Guardon checks Browser Extension",
+  "type": "module",
   "main": "background.js",
   "scripts": {
-    "lint": "echo 'Add linting later'"
+    "lint": "echo 'Add linting later'",
+    "test": "jest --coverage"
   },
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
     "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
   }
 }
