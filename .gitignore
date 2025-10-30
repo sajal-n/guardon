@@ -5,4 +5,3 @@ dist/
 /.tmp-*
 /.vscode/
 *.log
-assets/*.png
