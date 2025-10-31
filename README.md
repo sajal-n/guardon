@@ -84,6 +84,13 @@ Popup actions per violation:
 ## Kyverno importer (prototype)
 
 - Located at `src/utils/kyvernoImporter.js`.
+ 
+## Governance & Maintainers
+
+This project follows a minimal governance model appropriate for early-stage projects. See `GOVERNANCE.md` for details on decision-making, releases, and how to become a maintainer. The current maintainers are listed in `MAINTAINERS.md`.
+
+If you are contributing, please read `CONTRIBUTING.md` and follow the Developer Certificate of Origin (DCO) process described there.
+
  - Preview and import behavior:
    - When a Kyverno policy is detected during import-from-URL, the Options page shows a preview modal for converted rules.
    - If the converter produces zero convertible rules, the UI now surfaces a toast and console.debug message explaining that no convertible rules were produced (the raw policy can still be stored for audit).
