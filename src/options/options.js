@@ -38,7 +38,13 @@ let _kyvernoPreviewState = null; // { converted:[], rawText, meta }
 
 function showKyvernoPreview(converted, rawText, meta = {}) {
   _kyvernoPreviewState = { converted, rawText, meta };
-  try { kpShow(converted, rawText, meta); } catch (e) { /* defensive */ }
+  try {
+    console.debug('[options] showKyvernoPreview called - converted rules:', Array.isArray(converted) ? converted.length : 'no array');
+    kpShow(converted, rawText, meta);
+  } catch (e) {
+    console.error('[options] kpShow threw', e && e.message);
+    showToast('Failed to render Kyverno preview (see console)', { background: '#b91c1c' });
+  }
 }
 function showToast(msg, opts = {}) {
   const toast = document.getElementById('toast');
@@ -212,8 +218,21 @@ if (saveRuleBtn) saveRuleBtn.onclick = () => {
   // Prevent duplicate IDs (unless editing the same index)
   const duplicateIdx = rules.findIndex((r, i) => r.id === newRule.id && i !== editingIndex);
   if (duplicateIdx !== -1) {
-    showToast(`Rule ID "${newRule.id}" already exists. Choose a unique ID.`, { background: '#b91c1c' });
-    return;
+    // If we're editing an existing rule, allow update in place. If creating
+    // a new rule (editingIndex is null) but the ID already exists, override
+    // the existing rule to preserve user intent (import-like behavior).
+    if (editingIndex === null) {
+      rules[duplicateIdx] = newRule;
+      saveRules();
+      renderTable();
+      showToast(`Replaced existing rule with id "${newRule.id}"`, { background: '#059669' });
+      if (form) form.style.display = 'none';
+      return;
+    } else {
+      // editingIndex is same as found index case will be skipped by findIndex
+      showToast(`Rule ID "${newRule.id}" already exists. Choose a unique ID.`, { background: '#b91c1c' });
+      return;
+    }
   }
 
   if (editingIndex !== null) rules[editingIndex] = newRule;
@@ -227,41 +246,9 @@ if (saveRuleBtn) saveRuleBtn.onclick = () => {
 
 const importRulesBtn = document.getElementById("importRules");
 if (importRulesBtn) importRulesBtn.onclick = async () => {
-  if (!newRule.id) missingFields.push('id');
-  if (!newRule.description) missingFields.push('description');
-  if (!newRule.kind) missingFields.push('kind');
-  if (!newRule.match) missingFields.push('match');
-  if (!newRule.pattern) missingFields.push('pattern');
-  if (typeof newRule.required !== 'boolean') missingFields.push('required');
-  if (!newRule.severity) missingFields.push('severity');
-  if (!newRule.message) missingFields.push('message');
-
-  if (missingFields.length) {
-    showToast('Missing required fields: ' + missingFields.join(', '), { background: '#b91c1c' });
-    return;
-  }
-
-  // Validate severity
-  const allowedSeverities = ['info', 'warning', 'error'];
-  if (!allowedSeverities.includes(newRule.severity)) {
-    showToast('Severity must be one of: info, warning, error', { background: '#b91c1c' });
-    return;
-  }
-
-  // Prevent duplicate IDs (unless editing the same index)
-  const duplicateIdx = rules.findIndex((r, i) => r.id === newRule.id && i !== editingIndex);
-  if (duplicateIdx !== -1) {
-    showToast(`Rule ID "${newRule.id}" already exists. Choose a unique ID.`, { background: '#b91c1c' });
-    return;
-  }
-
-  if (editingIndex !== null) rules[editingIndex] = newRule;
-  else rules.push(newRule);
-
-  saveRules();
-  form.style.display = "none";
-  renderTable();
-  showToast(editingIndex !== null ? 'Rule updated' : 'Rule added', { background: '#059669' });
+  // Show the import panel where users can upload a JSON file or paste JSON
+  const panel = document.getElementById('importPanel');
+  if (panel) panel.style.display = 'block';
 };
 
 function saveRules() {
@@ -290,6 +277,47 @@ function saveRawKyverno(rawText, meta = {}) {
 }
 
 // Wire Kyverno preview action buttons (wrappers are implemented in kyvernoPreview.js)
+
+// Apply an array of converted rule-like objects (from kyvernoImporter) into
+// the current `rules` collection. This mirrors the import logic used for
+// JSON imports: normalize fields, avoid duplicates (replace by id), persist
+// and refresh the table.
+function applyNormalizedRules(items) {
+  if (!Array.isArray(items) || items.length === 0) return 0;
+  const normalized = items.map(r => ({
+    id: String(r.id || (r.description ? r.description.replace(/\s+/g,'-').toLowerCase() : `rule-${Date.now()}`)).trim(),
+    description: r.description || r.desc || '',
+    kind: r.kind || '',
+    match: r.match || '',
+    pattern: r.pattern || '',
+    required: (r.required === true || r.required === 'true'),
+    severity: r.severity || 'warning',
+    message: r.message || '',
+    fix: r.fix !== undefined ? r.fix : undefined,
+    explain: r.explain || undefined,
+  }));
+
+  let added = 0, replaced = 0;
+  for (const nr of normalized) {
+    if (!nr.id) continue;
+    const idx = rules.findIndex(r => r.id === nr.id);
+    if (idx !== -1) {
+      rules[idx] = nr;
+      replaced++;
+    } else {
+      rules.push(nr);
+      added++;
+    }
+  }
+
+  if (added || replaced) {
+    try { saveRules(); } catch (e) { console.debug('saveRules failed', e && e.message); }
+    try { renderTable(); } catch (e) { console.debug('renderTable failed', e && e.message); }
+    showToast(`Imported ${added} new, replaced ${replaced} existing rule(s)`, { background: '#059669' });
+  }
+  return added + replaced;
+}
+
 if (kyvernoCancelBtn) kyvernoCancelBtn.addEventListener('click', hideKyvernoPreview);
 if (kyvernoImportRawBtn) kyvernoImportRawBtn.addEventListener('click', () => {
   if (!_kyvernoPreviewState) return;
@@ -364,6 +392,9 @@ if (fetchUrlBtn) {
               // Show preview modal instead of simple confirm()
               showKyvernoPreview(converted, text, { url });
               return;
+            } else if (isKyverno) {
+              console.debug('[options] Kyverno policy detected but convertDocs returned 0 rules');
+              showToast('Kyverno policy detected but no convertible rules were produced — check console for details', { background: '#f59e0b' });
             }
           }
         } catch (e) {
@@ -402,6 +433,9 @@ if (fetchUrlBtn) {
           if (converted && converted.length > 0) {
             showKyvernoPreview(converted, fetchedText, { url });
             return;
+          } else if (isKyvernoBg) {
+            console.debug('[options] Kyverno policy detected (background fetch) but convertDocs returned 0 rules');
+            showToast('Kyverno policy detected but conversion returned 0 rules (background fetch). See console for details', { background: '#f59e0b' });
           }
         }
       } catch (e) {
@@ -520,6 +554,30 @@ if (doImportBtn) doImportBtn.onclick = () => {
   const panel = document.getElementById('importPanel'); if (panel) panel.style.display = 'none';
   if (ta) ta.value = '';
   const file = document.getElementById('importFile'); if (file) file.value = null;
+};
+
+// Paste from clipboard into the import textarea
+const pasteClipboardBtn = document.getElementById('pasteClipboard');
+if (pasteClipboardBtn) pasteClipboardBtn.onclick = async () => {
+  const ta = document.getElementById('importTextarea');
+  try {
+    const text = await navigator.clipboard.readText();
+    if (ta) ta.value = text || '';
+    showToast('Pasted from clipboard', { background: '#0ea5e9' });
+  } catch (e) {
+    console.debug('pasteClipboard failed', e && e.message);
+    showToast('Failed to read clipboard: ' + (e && e.message ? e.message : String(e)), { background: '#b91c1c' });
+  }
+};
+
+// Cancel import panel and clear inputs
+const cancelImportBtn = document.getElementById('cancelImport');
+if (cancelImportBtn) cancelImportBtn.onclick = () => {
+  const panel = document.getElementById('importPanel'); if (panel) panel.style.display = 'none';
+  const ta = document.getElementById('importTextarea'); if (ta) ta.value = '';
+  const file = document.getElementById('importFile'); if (file) file.value = null;
+  if (importUrlInput) importUrlInput.value = '';
+  showToast('Import cancelled', { background: '#6b7280', duration: 1200 });
 };
 
 const exportRulesBtn = document.getElementById("exportRules");

@@ -4,8 +4,10 @@ export function escapeHtml(s) {
   return String(s).replace(/[&<>\"'`]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;","`":"&#96;"}[c]));
 }
 
-export function showKyvernoPreview(converted, rawText, meta = {}, dom = {}) {
+export function showKyvernoPreview(converted, rawText, meta = {}, dom) {
   // dom param is optional for testability; defaults to global document lookups
+  // Avoid defaulting to an empty object (truthy) which would prevent
+  // falling back to the real `document` when caller omits the dom arg.
   const _dom = dom || document;
   const kyvernoModal = _dom.getElementById('kyvernoModal');
   const kyvernoPreviewBody = _dom.getElementById('kyvernoPreviewBody');
@@ -52,7 +54,7 @@ export function showKyvernoPreview(converted, rawText, meta = {}, dom = {}) {
   kyvernoModal.style.display = 'flex';
 }
 
-export function hideKyvernoPreview(dom = {}) {
+export function hideKyvernoPreview(dom) {
   const _dom = dom || document;
   const kyvernoModal = _dom.getElementById('kyvernoModal');
   if (!kyvernoModal) return;

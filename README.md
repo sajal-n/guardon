@@ -78,10 +78,16 @@ Popup actions per violation:
   - Add/Edit/Delete rules
   - Import from file or URL (background fetch fallback)
   - Kyverno policy detection + preview of converted rules
+  - Import panel buttons: "Paste from clipboard" and "Cancel" (convenience and clear/close the import UI)
+  - Quick "Suggest resource fix" helper to populate the Fix JSON textarea with a sensible requests/limits suggestion for resource-related rules
 
 ## Kyverno importer (prototype)
 
 - Located at `src/utils/kyvernoImporter.js`.
+ - Preview and import behavior:
+   - When a Kyverno policy is detected during import-from-URL, the Options page shows a preview modal for converted rules.
+   - If the converter produces zero convertible rules, the UI now surfaces a toast and console.debug message explaining that no convertible rules were produced (the raw policy can still be stored for audit).
+   - The preview modal supports selecting converted rules and importing them; imported rules will overwrite existing rules with the same `id`.
 
 ## Architecture
 
@@ -118,6 +124,7 @@ If `npm install` fails, please check your Node/npm versions and network connecti
 
 - rulesEngine: `src/utils/rulesEngine.js` — core validation engine. Exports `validateYaml`, `previewPatchedYaml` and helpers. Designed to run in both browser (with UMD js-yaml) and Node (npm js-yaml).
 - kyvernoImporter: `src/utils/kyvernoImporter.js` — converts Kyverno patterns to internal rules.
+ - options UI: `src/options/options.html` and `src/options/options.js` — the Options page includes the Kyverno preview modal, import panel (paste/cancel), a suggest-fix helper, and the import logic that merges or replaces rules by id.
 - content scripts: minimal and message-driven — they avoid DOM mutations on load.
 - background service worker: provides a `FETCH_RAW` helper for CORS/raw fetching.
 
