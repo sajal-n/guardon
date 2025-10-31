@@ -87,7 +87,7 @@ Popup actions per violation:
  
 ## Governance & Maintainers
 
-This project follows a minimal governance model appropriate for early-stage projects. See `GOVERNANCE.md` for details on decision-making, releases, and how to become a maintainer. The current maintainers are listed in `MAINTAINERS.md`.
+This project follows a minimal governance model appropriate for early-stage projects. See `GOVERNANCE.md` for details on decision-making, releases, and how to become a maintainer. The current maintainers are listed in `MAINTAINERS.md`. See `ROADMAP.md` for planned features, milestones, and time horizons.
 
 If you are contributing, please read `CONTRIBUTING.md` and follow the Developer Certificate of Origin (DCO) process described there.
 
