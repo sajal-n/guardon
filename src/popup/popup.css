@@ -1,9 +1,12 @@
 html, body {
   margin: 0;
   padding: 0;
-  /* Fixed popup size with internal scrolling when content overflows. */
-  width: 600px;   /* fixed width */
-  height: 520px;  /* fixed height */
+  /* Use flexible sizing so the extension popup can resize naturally
+     while capping maximum dimensions for readability. */
+  min-width: 320px;
+  max-width: 700px;
+  width: 520px;
+  max-height: 780px;
   overflow-y: auto;
   font-family: "Segoe UI", Roboto, sans-serif;
   background: linear-gradient(180deg, #f7fbff 0%, #f0f6ff 100%);
@@ -13,6 +16,7 @@ html, body {
 
 #container {
   padding: 14px 16px;
+  box-sizing: border-box;
 }
 
 /* Header */
@@ -147,5 +151,6 @@ td.info { color: #0ea5e9; }
 
 /* Small responsive tweaks */
 @media (max-width: 420px) {
-  html, body { width: 420px; }
+  html, body { width: 100%; }
+  #container { padding: 10px; }
 }

@@ -507,3 +507,16 @@ export async function previewPatchedYaml(yamlText, docIndex, suggestion, opts = 
     return null;
   }
 }
+
+// Re-export helper utilities for tests and consumers that import this module dynamically
+export {
+  resolveJsYaml,
+  _get,
+  _has,
+  getParentPath,
+  findPathByValue,
+  setNested,
+  deleteNested,
+  applySuggestionToDoc,
+  // validateYaml and previewPatchedYaml are already exported where they are defined
+};

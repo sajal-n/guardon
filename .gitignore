@@ -1,0 +1,7 @@
+node_modules/
+coverage/
+.DS_Store
+dist/
+/.tmp-*
+/.vscode/
+*.log

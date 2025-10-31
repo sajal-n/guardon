@@ -1,10 +1,9 @@
 name: Generate assets (SVG -> PNG)
 
+# This workflow is now manual-only. The automatic push trigger was removed
+# because the conversion step (Puppeteer) caused CI failures on push.
 on:
   workflow_dispatch: {}
-  push:
-    branches:
-      - feature/enhancement
 
 jobs:
   convert:

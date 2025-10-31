@@ -1,0 +1,14 @@
+This project uses the Developer Certificate of Origin (DCO) 1.1.
+
+By making a contribution to this project, you agree that you have the
+right to submit the work under the project's license and that each of
+your commits includes the following sign-off line (example):
+
+  Signed-off-by: Sajal Nigam <sajalnigam@gmail.com.com>
+
+To sign-off a commit locally, use `git commit -s` when creating the commit
+or add the Signed-off-by line to your commit message.
+
+If you cannot sign-off on commits (for example, because your employer
+requires a different process), please open an issue so maintainers can
+discuss alternatives.

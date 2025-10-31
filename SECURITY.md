@@ -4,7 +4,7 @@ Thank you for taking the time to help keep this project secure. This document ex
 
 ## Reporting a vulnerability
 
-Please do not open public issues for security-sensitive vulnerabilities. Instead, contact the maintainers privately at: sajalnigam@yourdomaingmail.example or open a private GitHub security advisory.
+Please do not open public issues for security-sensitive vulnerabilities. Instead, contact the maintainers privately at: sajalnigam@gmail.com or open a private GitHub Security Advisory. We strongly encourage using GitHub's private security advisories when possible so we can coordinate fixes privately.
 
 When reporting, include:
 
