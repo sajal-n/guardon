@@ -125,6 +125,53 @@ Limitations: the importer is heuristic and intentionally conservative — comple
 
 - Tests use Jest and target utility modules under `src/utils`. Coverage reports are stored in `coverage/`.
 
+## Building the distribution ZIP (for Chrome Web Store)
+
+We provide small scripts that create a trimmed ZIP containing only the runtime files needed by the extension (manifest, popup/options, background, content script, runtime libs). Use these to produce the ZIP you upload to the Chrome Web Store.
+
+PowerShell (Windows):
+
+```powershell
+# from repository root
+.\scripts\build-dist.ps1
+# or specify a custom filename
+.\scripts\build-dist.ps1 -OutFile guardon-latest.zip
+```
+
+Bash (Linux/macOS/WSL):
+
+```bash
+chmod +x ./scripts/build-dist.sh
+./scripts/build-dist.sh
+# or with explicit output name
+./scripts/build-dist.sh guardon-latest.zip
+```
+
+Quick checks:
+
+- List files in the zip (bash):
+
+```bash
+unzip -l guardon-*.zip
+```
+
+- Inspect contents (PowerShell):
+
+```powershell
+# unzip to a temporary folder and list
+Expand-Archive -LiteralPath .\guardon-*.zip -DestinationPath .\tmp-dist -Force
+Get-ChildItem -Path .\tmp-dist -Recurse
+```
+
+Optional validation:
+
+- Ensure manifest-referenced files exist in the zip (simple grep/unzip approach):
+
+```bash
+unzip -l guardon-*.zip | awk '{print $4}' | grep -E 'manifest.json|src/popup/popup.html|src/options/options.html|src/background.js' || echo "missing file(s)"
+```
+
+
 If `npm install` fails, please check your Node/npm versions and network connectivity. Share the npm error output if you need help troubleshooting.
 
 ## Architecture notes
