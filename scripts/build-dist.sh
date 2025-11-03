@@ -38,7 +38,14 @@ INCLUDES=(
 for item in "${INCLUDES[@]}"; do
   if [ -e "$item" ]; then
     echo "Copying $item"
-    cp -r "$item" "$DIST_DIR/"
+    parentpart=$(dirname "$item")
+    if [ "$parentpart" = "." ] || [ -z "$parentpart" ]; then
+      targetdir="$DIST_DIR"
+    else
+      targetdir="$DIST_DIR/$parentpart"
+      mkdir -p "$targetdir"
+    fi
+    cp -r "$item" "$targetdir/"
   else
     echo "Warning: $item not found, skipping"
   fi
