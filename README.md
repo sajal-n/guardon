@@ -1,4 +1,4 @@
-# 🛡️ Guardon — Kubernetes Guardon checks Browser Extension
+# 🛡️ Guardon — Kubernetes Compliance & Security Checks Extension
 
 ![Guardon product banner](./assets/product-banner.svg)
 
