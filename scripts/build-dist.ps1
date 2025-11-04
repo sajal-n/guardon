@@ -48,10 +48,17 @@ try {
   foreach ($item in $includes) {
     if (Test-Path $item) {
       Write-Output "Copying $item"
-      $dest = Join-Path $dist $item
-      $parent = Split-Path -Parent $dest
-      if (-not (Test-Path $parent)) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
-      Copy-Item -Path $item -Destination $dist -Recurse -Force
+      # Determine the parent directory part of the source item so we can reproduce
+      # the same relative path under dist. For example, copying `src\popup` should
+      # create `dist\src\popup` (not `dist\popup`).
+      $parentPart = Split-Path -Parent $item
+      if ([string]::IsNullOrEmpty($parentPart) -or $parentPart -eq '.') {
+        $targetDir = $dist
+      } else {
+        $targetDir = Join-Path $dist $parentPart
+      }
+      if (-not (Test-Path $targetDir)) { New-Item -ItemType Directory -Path $targetDir -Force | Out-Null }
+      Copy-Item -Path $item -Destination $targetDir -Recurse -Force
     } else {
       Write-Output "Warning: $item not found, skipping"
     }

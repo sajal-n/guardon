@@ -20,13 +20,13 @@
   <!-- Title -->
   <g transform="translate(320,60)">
     <text x="0" y="0" font-family="Segoe UI, Roboto, Arial" font-size="44" font-weight="700" fill="#fff">Guardon</text>
-    <text x="0" y="52" font-family="Segoe UI, Roboto, Arial" font-size="20" fill="#e6f7ff">Kubernetes Guardon checks — lint, explain, and suggest fixes for YAML</text>
+    <text x="0" y="52" font-family="Segoe UI, Roboto, Arial" font-size="20" fill="#e6f7ff">Shift Kubernetes Security Left &#8212; Validate YAMLs Instantly in Your Browser</text>
 
     <!-- badges -->
     <g transform="translate(0,92)">
       <rect x="0" y="0" width="160" height="34" rx="6" fill="#0ea5e9" />
       <text x="14" y="22" font-family="Segoe UI, Roboto" font-size="14" fill="#04263a">Browser Extension</text>
-      <rect x="180" y="0" width="220" height="34" rx="6" fill="#164e63" opacity="0.95" />
+      <rect x="180" y="0" width="250" height="34" rx="6" fill="#164e63" opacity="0.95" />
       <text x="194" y="22" font-family="Segoe UI, Roboto" font-size="14" fill="#dff6ff">Multi-doc YAML • Kyverno importer</text>
     </g>
   </g>
