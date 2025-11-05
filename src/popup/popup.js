@@ -18,6 +18,27 @@ document.addEventListener("DOMContentLoaded", async () => {
   const explainRefs = document.getElementById('explainRefs');
   const closeExplainBtn = document.getElementById('closeExplainBtn');
 
+  // Suggestion & explain modal wiring (attach early so manual-paste flow can use them)
+  if (closeSuggestionBtn) closeSuggestionBtn.addEventListener('click', () => { if (suggestionModal) suggestionModal.style.display = 'none'; });
+  if (copyPatchBtn) copyPatchBtn.addEventListener('click', async () => {
+    try {
+      const text = suggestionPre.textContent || '';
+      await navigator.clipboard.writeText(text);
+      try { showToast && showToast('Patched YAML copied'); } catch (_) {}
+    } catch (e) { try { showToast && showToast('Copy failed', { background: '#b91c1c' }); } catch (_) {} }
+  });
+  if (downloadPatchBtn) downloadPatchBtn.addEventListener('click', () => {
+    try {
+      const text = suggestionPre.textContent || '';
+      const blob = new Blob([text], { type: 'text/yaml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'patched.yaml'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      try { showToast && showToast('Downloaded patched YAML'); } catch (_) {}
+    } catch (e) { try { showToast && showToast('Download failed', { background: '#b91c1c' }); } catch (_) {} }
+  });
+  if (closeExplainBtn) closeExplainBtn.addEventListener('click', () => { if (explainModal) explainModal.style.display = 'none'; });
+
   // Dynamically import the rules engine so we can show an error in the UI
   // if it fails to load (instead of a silent module load error).
   let validateYaml = null;
@@ -32,8 +53,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (bootStatus) bootStatus.textContent = 'Error loading validation engine — see console for details.';
     // Keep running so manual paste may still work; but mark validation unavailable.
   }
-  const validateAvailable = typeof validateYaml === 'function';
-  const previewAvailable = typeof previewPatchedYaml === 'function';
+  let validateAvailable = typeof validateYaml === 'function';
+  let previewAvailable = typeof previewPatchedYaml === 'function';
+
+  // Shared results for manual validation and actions
+  let results = [];
 
   function showValidationUnavailable(note) {
     if (bootStatus) bootStatus.textContent = note || 'Validation engine not available.';
@@ -218,14 +242,34 @@ document.addEventListener("DOMContentLoaded", async () => {
     const validateManualBtn = document.getElementById('validateManual');
     if (validateManualBtn) {
       validateManualBtn.onclick = async () => {
+        const content = (document.getElementById('manualYaml') || { value: '' }).value;
+        if (!content) return;
+        // Ensure preview helpers receive the original YAML stream by setting
+        // the shared `yamlText` variable. Also assign results to the outer
+        // `results` variable (avoid shadowing) so copy/report/preview use it.
+        yamlText = content;
+
+        // If the validation engine wasn't available earlier, attempt to load it now.
+        if (!validateAvailable) {
+          try {
+            const m2 = await import('../utils/rulesEngine.js');
+            validateYaml = m2.validateYaml;
+            previewPatchedYaml = m2.previewPatchedYaml;
+            validateAvailable = typeof validateYaml === 'function';
+            previewAvailable = typeof previewPatchedYaml === 'function';
+            if (bootStatus) bootStatus.textContent = validateAvailable ? 'Ready' : 'Validation unavailable';
+          } catch (e) {
+            console.error('Re-import of validation engine failed', e);
+          }
+        }
+
         if (!validateAvailable) {
           showValidationUnavailable('Validation engine failed to load; cannot validate.');
           return;
         }
-        const content = (document.getElementById('manualYaml') || { value: '' }).value;
-        if (!content) return;
+
         try {
-          const results = await validateYaml(content, await (async () => { const { customRules } = await chrome.storage.local.get('customRules'); return customRules || []; })());
+          results = await validateYaml(content, await (async () => { const { customRules } = await chrome.storage.local.get('customRules'); return customRules || []; })());
           renderResults(results);
         } catch (err) {
           console.error('Manual validation failed', err);
@@ -267,7 +311,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     showValidationUnavailable('Validation engine failed to load; cannot validate YAML.');
     return;
   }
-  let results = [];
+  results = [];
   try {
     results = await validateYaml(yamlText, rules);
     // If parser produced a parse-error result, show the sanitized YAML text
@@ -459,27 +503,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     copyBtn.textContent = "✅ Copied!";
     setTimeout(() => (copyBtn.textContent = "📋 Copy Report"), 1500);
   };
-  // Suggestion modal wiring
-  if (closeSuggestionBtn) closeSuggestionBtn.addEventListener('click', () => { if (suggestionModal) suggestionModal.style.display = 'none'; });
-  if (copyPatchBtn) copyPatchBtn.addEventListener('click', async () => {
-    try {
-      const text = suggestionPre.textContent || '';
-      await navigator.clipboard.writeText(text);
-      showToast('Patched YAML copied');
-    } catch (e) { showToast('Copy failed', { background: '#b91c1c' }); }
-  });
-  if (downloadPatchBtn) downloadPatchBtn.addEventListener('click', () => {
-    try {
-      const text = suggestionPre.textContent || '';
-      const blob = new Blob([text], { type: 'text/yaml' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = 'patched.yaml'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-      showToast('Downloaded patched YAML');
-    } catch (e) { showToast('Download failed', { background: '#b91c1c' }); }
-  });
-  // Explain modal wiring
-  if (closeExplainBtn) closeExplainBtn.addEventListener('click', () => { if (explainModal) explainModal.style.display = 'none'; });
+  // Suggestion/explain modal handlers wired earlier
   
   // renderResults helper used by manual validation
   function renderResults(results) {
