@@ -18,6 +18,32 @@ document.addEventListener("DOMContentLoaded", async () => {
   const explainRefs = document.getElementById('explainRefs');
   const closeExplainBtn = document.getElementById('closeExplainBtn');
 
+  // Inline SVG icons used in buttons (small, stroke=currentColor so they inherit button color)
+  const ICONS = {
+  // spanner-style icon (uses stroke=currentColor so it inherits button color)
+  wrench: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none"><path d="M21.7 6.3a1 1 0 0 0-1.4 0l-2 2a6 6 0 0 1-8.48 8.48l-1.12 1.12a2.5 2.5 0 0 0 0 3.54l4 4a2.5 2.5 0 0 0 3.54 0l1.12-1.12a6 6 0 0 1 8.48-8.48l2-2a1 1 0 0 0 0-1.4l-4-4zM14.5 9.5l-1 1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    clipboard: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none"><path d="M16 4h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="9" y="2" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.6"/></svg>',
+    info: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 8h.01M12 11v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+  };
+
+  function parseSvg(str) {
+    try {
+      const doc = new DOMParser().parseFromString(str, 'image/svg+xml');
+      const svg = doc.documentElement;
+      if (svg && svg.tagName && svg.tagName.toLowerCase() === 'svg') {
+        svg.setAttribute('width', '16');
+        svg.setAttribute('height', '16');
+        svg.setAttribute('aria-hidden', 'true');
+        svg.setAttribute('focusable', 'false');
+        return svg;
+      }
+    } catch (e) {
+      // fallthrough
+    }
+    const sp = document.createElement('span'); sp.textContent = '';
+    return sp;
+  }
+
   // Suggestion & explain modal wiring (attach early so manual-paste flow can use them)
   if (closeSuggestionBtn) closeSuggestionBtn.addEventListener('click', () => { if (suggestionModal) suggestionModal.style.display = 'none'; });
   if (copyPatchBtn) copyPatchBtn.addEventListener('click', async () => {
@@ -55,6 +81,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
   let validateAvailable = typeof validateYaml === 'function';
   let previewAvailable = typeof previewPatchedYaml === 'function';
+
+  // Load custom rules early so renderResults (used by manual flow) can
+  // reference `rules` without causing a TDZ/ReferenceError.
+  const { customRules } = await chrome.storage.local.get('customRules');
+  const rules = customRules || [];
 
   // Shared results for manual validation and actions
   let results = [];
@@ -269,7 +300,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         try {
-          results = await validateYaml(content, await (async () => { const { customRules } = await chrome.storage.local.get('customRules'); return customRules || []; })());
+          // use rules loaded earlier (safe for manual flow)
+          results = await validateYaml(content, rules);
           renderResults(results);
         } catch (err) {
           console.error('Manual validation failed', err);
@@ -296,9 +328,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
   }
 
-  const { customRules } = await chrome.storage.local.get("customRules");
-  const rules = customRules || [];
-
+  // custom rules already loaded earlier
   if (!rules.length) {
     summary.textContent = "No Guardon rules configured. Add them in Options.";
     statusBadge.textContent = "NO RULES";
@@ -407,7 +437,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   previewBtn.className = 'action-btn icon-btn preview';
   previewBtn.title = 'Preview patch';
   previewBtn.setAttribute('aria-label', 'Preview patch');
-  previewBtn.innerHTML = '🔧';
+  previewBtn.textContent = '🔧';
       previewBtn.addEventListener('click', async () => {
         if (!previewAvailable) {
           alert('Patch preview not available');
@@ -430,7 +460,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   copySnippetBtn.className = 'action-btn icon-btn copy';
   copySnippetBtn.title = 'Copy snippet';
   copySnippetBtn.setAttribute('aria-label', 'Copy snippet');
-  copySnippetBtn.innerHTML = '📋';
+  copySnippetBtn.textContent = '📋';
       copySnippetBtn.addEventListener('click', async () => {
         try {
           const j = globalThis.jsyaml;
@@ -543,7 +573,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (r.suggestion) {
           const previewBtn = document.createElement('button');
           previewBtn.type = 'button';
-          previewBtn.textContent = 'Preview Patch';
+          previewBtn.className = 'action-btn icon-btn preview';
+          previewBtn.title = 'Preview patched YAML';
+          previewBtn.setAttribute('aria-label', 'Preview patched YAML');
+          previewBtn.textContent = '🔧';
           previewBtn.addEventListener('click', async () => {
             if (!previewAvailable) {
               alert('Patch preview not available');
@@ -563,7 +596,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
           const copySnippetBtn = document.createElement('button');
           copySnippetBtn.type = 'button';
-          copySnippetBtn.textContent = 'Copy Snippet';
+          copySnippetBtn.className = 'action-btn icon-btn copy';
+          copySnippetBtn.title = 'Copy snippet';
+          copySnippetBtn.setAttribute('aria-label', 'Copy snippet');
+          copySnippetBtn.textContent = '📋';
           copySnippetBtn.addEventListener('click', async () => {
             try {
               const j = globalThis.jsyaml;
