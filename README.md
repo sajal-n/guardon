@@ -5,6 +5,7 @@
 [Open product banner (raw SVG)](./assets/product-banner.svg)
 
 Guardon is a lightweight browser extension that helps developers and reviewers detect common Kubernetes misconfigurations and security issues directly on code hosting sites (GitHub, GitLab, Bitbucket) or from pasted YAML. It parses multi-document YAML, applies configurable rules, and can suggest safe fixes.
+Quick Introduction : https://youtu.be/LPAi8UY1XIM
 
 This README documents installation, development, configuration, and how to contribute to the project.
 
