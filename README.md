@@ -21,6 +21,9 @@ This README documents installation, development, configuration, and how to contr
 - Safe content-script behavior: non-invasive (no auto-injection); validation happens on explicit action (popup) or manual paste.
 - Background fetch helper for importing remote rule files or raw YAML from hosts like raw.githubusercontent.com.
 
+## Quick Demo
+ - https://youtu.be/b-kzvAfV5r8
+
 ## Quick install (developer / local)
 
 1. Clone the repository:
