@@ -21,6 +21,7 @@ This README documents installation, development, configuration, and how to contr
 - Explain button: attach rationale and external references (CIS, NIST, Kyverno) to rules and surface them in the popup.
 - Safe content-script behavior: non-invasive (no auto-injection); validation happens on explicit action (popup) or manual paste.
 - Background fetch helper for importing remote rule files or raw YAML from hosts like raw.githubusercontent.com.
+- Dark Theme
 
 ## Quick Demo
  - https://youtu.be/b-kzvAfV5r8
